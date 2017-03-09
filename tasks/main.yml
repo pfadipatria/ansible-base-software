@@ -1,0 +1,40 @@
+---
+
+- name: Disable recommends
+  template:
+    src:   etc/apt/apt.conf.d/05norecommends.j2
+    dest: /etc/apt/apt.conf.d/05norecommends
+  register: base_software_register_apt_recommends
+
+- name: Configure Debian sources
+  template:
+    src:   etc/apt/sources.list.j2
+    dest: /etc/apt/sources.list
+  register: base_software_register_apt_repo
+
+- name: Configure Linuxmint sources
+  template:
+    src:   etc/apt/sources.list.d/official-package-repositories.list.j2
+    dest: /etc/apt/sources.list.d/official-package-repositories.list
+  register: base_software_register_apt_repo
+  when: ansible_lsb.id is defined and ansible_lsb.id == 'LinuxMint'
+
+- name: Update Package repo
+  apt:
+    update_cache: yes
+  when: base_software_register_apt_repo.changed or base_software_register_apt_recommends.changed
+
+- name: Remove unwanted software
+  package:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  with_items: '{{ base_software_unwanted | d ([]) }}'
+
+- name: Install standard packages
+  package:
+    name: '{{ item }}'
+    state: present
+  with_flattened:
+    - '{{ base_software_wanted }}'
+    - '{{ base_software_wanted_per_host | d ([]) }}'

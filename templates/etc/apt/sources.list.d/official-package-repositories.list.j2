@@ -1,0 +1,8 @@
+# {{ ansible_managed }}
+
+{% if base_software_sources_mint | d() %}
+{% for line in base_software_sources_mint %}
+{{ line }}
+{% endfor %}
+{% endif %}
+
